@@ -1,10 +1,12 @@
 import sys
+import os
+import urllib.request
+import urllib.parse
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-
-import urllib.request
+from urllib.parse import urlparse
 
 sys._excepthook = sys.excepthook
 
@@ -20,14 +22,13 @@ def my_exception_hook(exctype, value, traceback):
 # Set the exception hook to our wrapping function
 sys.excepthook = my_exception_hook
 
-
 class HelloWord(QDialog):
     def __init__(self):
         QDialog.__init__(self)
 
         layout = QGridLayout()
 
-        details_label = QLabel('')
+        self.details_label = QLabel('')
 
         url_label = QLabel('Url')
         self.url_textField = QLineEdit()
@@ -60,7 +61,7 @@ class HelloWord(QDialog):
         layout.addWidget(self.progressBar, 3, 0)
         layout.addWidget(download_button, 3, 1)
 
-        layout.addWidget(details_label, 4, 0)
+        layout.addWidget(self.details_label, 4, 0)
         layout.addWidget(close_button, 4, 1)
 
         self.setLayout(layout)
@@ -70,13 +71,32 @@ class HelloWord(QDialog):
         close_button.clicked.connect(self.close)
         download_button.clicked.connect(self.download)
 
-        self.url_textField.textChanged.connect(details_label.setText)
-
     def download(self):
         url = self.url_textField.text()
-        saveLocation = self.location_textField.text()
-        urllib.request.urlretrieve(url, saveLocation, self.progress_report)
-        self.progressBar.setValue(100)
+        saveLocation = self.location_textField.text().replace('/', '\\').replace('\\\\', '\\')
+        saveFileName = self.filename_textField.text().replace('/', '').replace('\\', '')
+
+        if os.path.isdir(saveLocation):
+            if saveLocation[:-1].endswith('\\'):
+                saveLocation += saveFileName
+            else:
+                saveLocation += '\\' + saveFileName
+
+            if not os.path.exists(saveLocation):
+                self.details_label.setText('')
+                try:
+                    parsed_url = urlparse(url)
+                    print(parsed_url)
+                    urllib.request.urlretrieve(url, saveLocation, self.progress_report)
+                    self.progressBar.setValue(100)
+                except:
+                    self.details_label.setText('url error')
+                    self.progressBar.setValue(0)
+                    pass
+            else:
+                self.details_label.setText('File exist')
+        else:
+            self.details_label.setText('Folder not exist')
 
     def progress_report(self, blockNum, blocksize, totalSize):
         readSoFar = blockNum * blocksize
