@@ -23,6 +23,7 @@ def my_exception_hook(exctype, value, traceback):
 # Set the exception hook to our wrapping function
 sys.excepthook = my_exception_hook
 
+
 class HelloWord(QDialog):
     def __init__(self):
         QDialog.__init__(self)
@@ -179,6 +180,8 @@ class HelloWord(QDialog):
 
             self.details_label.setText('')
             try:
+                download = DownloadProcess(saveFileName, url, saveLocation)
+
                 urllib.request.urlretrieve(url, saveLocation, self.progress_report)
                 self.progressBar.setValue(100)
                 QMessageBox.information(self, "Information", "Download completed.")
@@ -209,6 +212,29 @@ class HelloWord(QDialog):
         self.folder_textField.setText('')
         self.details_label.setText('')
         self.progressBar.setValue(0)
+
+
+class DownloadProcess():
+    def __init__(self, name, url, saveLocation):
+        self._url = url
+        self._saveLocation = saveLocation
+        self._name = name
+
+    def start_download(self):
+        urllib.request.urlretrieve(self._url, self._saveLocation, self.progress_report)
+
+    def progress_report(self, blockNum, blocksize, totalSize):
+        self._blockNum = blockNum
+        self._blocksize = blocksize
+        self._totalSize = totalSize
+
+        self.readSoFar = blockNum * blocksize
+        if totalSize > 0:
+            self.percent = self.readSoFar * 100 / totalSize
+
+    def getProgressReport(self):
+        return self.percent
+
 
 app = QApplication(sys.argv)
 dialog = HelloWord()
